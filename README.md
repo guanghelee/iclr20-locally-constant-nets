@@ -2,6 +2,8 @@
 
 This repository is for the paper "[Locally Constant Networks](https://openreview.net/pdf?id=Bke8UR4FPB)" by [Guang-He Lee](https://people.csail.mit.edu/guanghe/) and [Tommi S. Jaakkola](http://people.csail.mit.edu/tommi/) in ICLR 2020.
 
+<div style="text-align:center"><img src="http://people.csail.mit.edu/guanghe/iclr20_lcn_files/LCN_teaser.pdf" width="85%" height="85%"></div>  
+
 ## Package version
 
 * linux (we only tested the codes on Ubuntu)
@@ -35,7 +37,7 @@ which will run the LCN model with the Bace dataset.
 	```
     sh scripts/sider_split/run_LCN.sh 1
     ```
-which will run the LCN model with the Sider dataset (1st label). The Tox21 contains 12 labels, and the Sider dataset contains 27 labels. 
+which will run the LCN model with the the 1st label in the Sider dataset. The Tox21 contains 12 labels, and the Sider dataset contains 27 labels. 
 
 * The results will be stored in the [log/](log/) directory. The last 3 columns record the training, validation, and testing performance, respectively (from left to right). 
 
