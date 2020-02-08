@@ -2,7 +2,7 @@
 
 This repository is for the paper "[Locally Constant Networks](https://openreview.net/pdf?id=Bke8UR4FPB)" by [Guang-He Lee](https://people.csail.mit.edu/guanghe/) and [Tommi S. Jaakkola](http://people.csail.mit.edu/tommi/) in ICLR 2020.
 
-<div style="text-align:center"><img src="http://people.csail.mit.edu/guanghe/iclr20_lcn_files/LCN_teaser.pdf" width="85%" height="85%"></div>  
+<div style="text-align:center"><img src="http://people.csail.mit.edu/guanghe/iclr20_lcn_files/LCN_teaser.jpg" width="85%" height="85%"></div>  
 
 ## Package version
 
