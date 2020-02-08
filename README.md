@@ -39,17 +39,23 @@ which will run the LCN model with the Sider dataset (1st label). The Tox21 conta
 
 * The results will be stored in the [log/](log/) directory. The last 3 columns record the training, validation, and testing performance, respectively (from left to right). 
 
-## Suggestions for hyper-parameter tuning
+## How to set hyper-parameters
 
-### LCN, ALCN, and LLN
+### Switching among LCN, ALCN, and LLN
+
+The default model in [run_net_training.py](run_net_training.py) is LCN. 
+
+* Switching from LCN to ALCN: setting `--anneal` to `approx`.
+* Switching from LCN to LLN: setting `--net_type` to `locally_linear`.
+
+### Some suggestions for hyper-parameter tuning
 
 If you would like to apply the codes for other datasets, we suggest to tune the following hyper-parameters. You can see the complete list of hyper-parameters in [arg_utils.py](arg_utils.py). 
 
 * Depth of the network (`--depth`).
-* We suggest to use DropConnect (set `--drop_type` to `node_dropconnect`) and mildly tune the dropping probability (set `--p` to `0.25`/`0.5`/`0.75`)
-* You can start trying the model by setting `--back_n` to `0`. If it doesn't work, please try to increase it. In our experiments, we found that we need to increase it for regression tasks, and we simply keep it to `0` for classification tasks. 
-* Switching LCN to ALCN: this can be simply done by setting `--anneal` to `approx`.
-* You may want to tune the learning iterations (`--epochs`), learning rate (`--lr`), and optimizer (`--optimizer`) for your tasks. If you change the learning iterations (`--epochs`), you probably should also change the `--lr_step_size` and `--gamma` (see the `help` descriptions in [arg_utils.py](arg_utils.py)).
+* We suggest to use DropConnect (set `--drop_type` to `node_dropconnect`) and mildly tune the dropping probability (e.g., try `--p` in `{0.25, 0.5, 0.75}`).
+* You can start trying the model by setting `--back_n` (the depth of the network *g<sub>&phi;</sub>*) to `0`. If it doesn't work, please try to increase it. In our experiments, we found that we need to increase it for regression tasks, and we can simply keep it to `0` for classification tasks. 
+* You may want to tune the learning iterations (`--epochs`), learning rate (`--lr`), and optimizer (`--optimizer`) for your tasks. If you change the learning iterations (`--epochs`), you probably should also change the `--lr_step_size` and `--gamma` (see their meaning in the `help` descriptions in [arg_utils.py](arg_utils.py)).
 * You may enlarge the `--batch-size` to accelerate training. 
 
 ### ELCN
