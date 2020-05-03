@@ -1,4 +1,4 @@
-# Locally Constant Networks
+# Oblique Decision Trees from Derivatives of ReLU Networks (Locally Constant Networks)
 
 This repository is for the paper
 
