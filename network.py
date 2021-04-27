@@ -3,25 +3,29 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+
 def my_softplus(x, tau=1., threshold=20.):
-    truncate_mask = (x > threshold).type(torch.cuda.FloatTensor)
+    truncate_mask = (x > threshold).type(torch.FloatTensor)
     return truncate_mask * x + (1. - truncate_mask) * (tau * torch.log(1 + torch.exp((1. - truncate_mask) * x / tau)))
 
+
 def my_softplus_derivative(x, tau=1., threshold=20.):
-    truncate_mask = (x > threshold).type(torch.cuda.FloatTensor)
-    return truncate_mask + (1. - truncate_mask) / (1 + torch.exp(- (1. - truncate_mask) * x / tau) )
+    truncate_mask = (x > threshold).type(torch.FloatTensor)
+    return truncate_mask + (1. - truncate_mask) / (1 + torch.exp(- (1. - truncate_mask) * x / tau))
+
 
 class Net(nn.Module):
     def __init__(self, \
-            input_dim, \
-            output_dim, \
-            hidden_dim, \
-            num_layer, \
-            num_back_layer, \
-            dense = False, \
-            drop_type = 'none', \
-            net_type = 'locally_constant', \
-            approx = 'none'):
+                 input_dim, \
+                 output_dim, \
+                 hidden_dim, \
+                 num_layer, \
+                 num_back_layer, \
+                 dense=False, \
+                 drop_type='none', \
+                 net_type='locally_constant', \
+                 approx='none',
+                 device=None):
         super(Net, self).__init__()
 
         self.input_dim = input_dim
@@ -34,7 +38,7 @@ class Net(nn.Module):
         self.net_type = net_type
         self.n_neuron = self.hidden_dim * self.num_layer
         self.approx = approx
-        
+
         self.layer = nn.ModuleList()
 
         self.weights = dict()
@@ -50,8 +54,8 @@ class Net(nn.Module):
             ite_mask = np.zeros((1, hidden_dim, accu_dim))
             pick = np.random.choice(accu_dim, int(np.sqrt(accu_dim)), replace=False)
             ite_mask[0, 0, pick] = 1
-            assert(hidden_dim == 1) 
-            ite_mask = torch.tensor(ite_mask.astype(np.float32)).cuda()
+            assert (hidden_dim == 1)
+            ite_mask = torch.tensor(ite_mask.astype(np.float32)).to(device)
             self.weight_masks.append(ite_mask)
 
             if self.dense:
@@ -75,7 +79,7 @@ class Net(nn.Module):
             exit(0)
 
     def normal_forward(self, init_layer, p=0, training=True):
-        assert(self.net_type == 'locally_linear')
+        assert (self.net_type == 'locally_linear')
         relu_masks = []
         if len(init_layer.shape) == 4:
             bz = init_layer.shape[0]
@@ -96,7 +100,7 @@ class Net(nn.Module):
                 next_embed = torch.bmm(F.dropout(w, p=p, training=training), cur_embed.unsqueeze(-1)) + b.unsqueeze(-1)
                 next_embed = next_embed.squeeze(-1)
 
-            relu_masks.append( (next_embed > 0) )
+            relu_masks.append((next_embed > 0))
             next_embed = F.relu(next_embed)
             if self.dense:
                 cur_embed = torch.cat((cur_embed, next_embed), 1)
@@ -105,7 +109,7 @@ class Net(nn.Module):
         return self.output_fc(cur_embed), relu_masks
 
     def forward(self, init_layer, p=0, training=True, alpha=None, anneal='none'):
-        assert(self.net_type == 'locally_constant')
+        assert (self.net_type == 'locally_constant')
         relu_masks = []
         if len(init_layer.shape) == 4:
             bz = init_layer.shape[0]
@@ -114,14 +118,14 @@ class Net(nn.Module):
         cur_embed = init_layer
         # x is used to compute Jacobian using dynamic programming.
         x = init_layer.unsqueeze(-1)
-        
+
         batch_size = x.shape[0]
         patterns = []
         for i in range(self.num_layer):
             if self.drop_type != 'node_dropconnect':
                 next_embed = self.layer[i](cur_embed)
             w = self.layer[i].weight
-            w = w.view(1, w.shape[0], w.shape[1]).expand(batch_size, -1, -1)   
+            w = w.view(1, w.shape[0], w.shape[1]).expand(batch_size, -1, -1)
 
             if self.drop_type == 'node_dropconnect':
                 b = self.layer[i].bias
@@ -132,20 +136,21 @@ class Net(nn.Module):
             else:
                 pass
 
-            relu_masks.append( (next_embed > 0) )
+            relu_masks.append((next_embed > 0))
             if self.approx == 'approx':
                 neur_deriv = my_softplus_derivative(next_embed)
                 next_embed = my_softplus(next_embed)
             elif anneal == 'interpolation':
-                neur_deriv = alpha * (next_embed > 0).type(torch.cuda.FloatTensor) + (1 - alpha) * my_softplus_derivative(next_embed)
+                neur_deriv = alpha * (next_embed > 0).type(torch.FloatTensor) + \
+                             (1 - alpha) * my_softplus_derivative(next_embed)
                 next_embed = alpha * F.relu(next_embed) + (1 - alpha) * my_softplus(next_embed)
             elif anneal == 'none':
-                neur_deriv = (next_embed > 0).type(torch.cuda.FloatTensor)
+                neur_deriv = (next_embed > 0).type(torch.FloatTensor)
                 next_embed = F.relu(next_embed)
 
             patterns.append(neur_deriv)
             neur_deriv = neur_deriv.unsqueeze(-1)
-             
+
             if i == 0:
                 jacobians = neur_deriv * w
                 offsets = next_embed - torch.bmm(jacobians, x).squeeze(-1)
@@ -157,7 +162,7 @@ class Net(nn.Module):
 
                 ite_jacobians = neur_deriv * ite_jacobians
                 ite_offsets = next_embed - torch.bmm(ite_jacobians, x).squeeze(-1)
-                
+
                 jacobians = torch.cat([jacobians, ite_jacobians], dim=1)
                 offsets = torch.cat([offsets, ite_offsets], dim=1)
 
@@ -166,11 +171,9 @@ class Net(nn.Module):
             else:
                 cur_embed = next_embed
 
-        leaf_input = torch.cat([jacobians, offsets.unsqueeze(-1)], dim=2).view(batch_size, -1)    
+        leaf_input = torch.cat([jacobians, offsets.unsqueeze(-1)], dim=2).view(batch_size, -1)
         for i in range(self.num_back_layer):
             leaf_input = F.relu(self.backward_layer[i](leaf_input))
         leaf_output = self.backward_layer[-1](leaf_input)
-        
-        return leaf_output, relu_masks
 
-        
+        return leaf_output, relu_masks
